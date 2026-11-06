@@ -1,0 +1,940 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Ay Defteri</title>
+<meta name="description" content="Kayıtları yalnızca telefonunda tutan regl ve ovülasyon defteri.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ay Defteri">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#721622">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>
+/* Telefonda uygulama tam ekran açılır; bilgisayarda test için ortalanmış bir çerçeve gösterilir.
+   Yazı tipleri iPhone'un kendi Hoefler Text yazı tipidir; internetten hiçbir şey yüklenmez. */
+:root {
+  --parchment: #F3EADB;
+  --vellum: #EADDC6;
+  --ink: #2F201B;
+  --ink-faded: #75645A;
+  --gold: #9A7638;
+  --burgundy: #721622;
+  --burgundy-ink: #721622;
+  --verdigris: #4E6E5D;
+  --rose: #C25B6A;
+  --blush: #E2A3AB;
+  --on-burgundy: #F3EADB;
+  --desk: #DCCDB4;
+  --bezel: #2A1F1C;
+  --glass: rgba(234, 221, 198, 0.82);
+  --display: "Hoefler Text", "Iowan Old Style", Garamond, Georgia, serif;
+  --body: "Hoefler Text", "Iowan Old Style", Georgia, serif;
+  --caps: "Hoefler Text", "Iowan Old Style", Georgia, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --parchment: #1B1412; --vellum: #271C19; --ink: #E8DCC6; --ink-faded: #A89883;
+    --gold: #C2A065; --burgundy-ink: #C0566A; --verdigris: #86A897; --rose: #E08A96; --blush: #8E4E58; --desk: #100B0A;
+    --bezel: #3A2C28; --glass: rgba(39, 28, 25, 0.82); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --parchment: #1B1412; --vellum: #271C19; --ink: #E8DCC6; --ink-faded: #A89883;
+  --gold: #C2A065; --burgundy-ink: #C0566A; --verdigris: #86A897; --rose: #E08A96; --blush: #8E4E58; --desk: #100B0A;
+  --bezel: #3A2C28; --glass: rgba(39, 28, 25, 0.82); color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+html { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
+body {
+  margin: 0; overscroll-behavior: none;
+  background: var(--desk);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 17px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; align-items: center; justify-content: center; gap: 48px;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+button:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* Yan açıklama (yalnızca geniş ekran) */
+.aside { max-width: 300px; display: grid; gap: 14px; }
+.aside h1 { font-family: var(--display); font-weight: 400; font-size: 44px; margin: 0; color: var(--burgundy-ink); line-height: 1; }
+.aside p { margin: 0; color: var(--ink-faded); line-height: 1.5; font-size: 16px; }
+.aside .eyebrow { font-family: var(--caps); font-size: 11px; letter-spacing: .2em; color: var(--gold); }
+
+/* Telefon çerçevesi */
+.phone {
+  position: relative; flex: none;
+  width: 402px; height: min(874px, calc(100% - 40px));
+  border-radius: 58px; border: 11px solid var(--bezel);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.25), 0 30px 80px rgba(40, 10, 15, .35);
+  overflow: hidden; background: var(--parchment);
+}
+.island { position: absolute; top: 11px; left: 50%; transform: translateX(-50%); width: 122px; height: 35px; border-radius: 20px; background: #000; z-index: 30; }
+.statusbar { position: absolute; top: 0; left: 0; right: 0; height: 54px; display: flex; align-items: center; justify-content: space-between; padding: 6px 34px 0 40px; font-family: -apple-system, system-ui, sans-serif; font-weight: 600; font-size: 16px; color: var(--ink); z-index: 25; background: linear-gradient(var(--parchment) 60%, transparent); pointer-events: none; }
+.statusbar .icons { display: flex; gap: 6px; align-items: center; }
+
+@media (max-width: 760px) { .aside { display: none; } }
+@media (max-width: 520px) {
+  body { padding-left: 0; padding-right: 0; display: block; background: var(--parchment); }
+  .phone { width: 100%; height: 100%; border: 0; border-radius: 0; box-shadow: none; }
+  .island, .statusbar { display: none; }
+}
+/* Saat ve pil simgelerinin altında kalan ince bordo şerit */
+.topband { display: none; }
+@media (max-width: 520px) {
+  .topband { display: block; position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top, 0px); background: var(--burgundy); z-index: 35; border-bottom: 1px solid color-mix(in srgb, var(--gold) 60%, transparent); }
+}
+
+.screen {
+  position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden;
+  padding: 62px 20px 120px;
+  background:
+    radial-gradient(ellipse at center, transparent 45%, rgba(114, 22, 34, .07) 100%),
+    var(--parchment);
+  scrollbar-width: none;
+}
+.screen::-webkit-scrollbar { display: none; }
+@media (max-width: 520px) {
+  .screen { -webkit-overflow-scrolling: touch; padding-top: calc(20px + env(safe-area-inset-top, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+}
+.stack { display: flex; flex-direction: column; gap: 20px; }
+
+/* Başlık */
+.header { text-align: center; display: grid; gap: 4px; padding-top: 6px; }
+.header .sub { font-style: italic; color: var(--ink-faded); font-size: 17px; }
+.header h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 36px; line-height: 1.1; color: var(--ink); text-wrap: balance; }
+.header h2 .initial { color: var(--burgundy-ink); font-size: 52px; line-height: 0.8; }
+.flourish { display: flex; align-items: center; gap: 10px; color: var(--gold); padding: 2px 44px 0; }
+.flourish::before, .flourish::after { content: ""; flex: 1; height: 1px; }
+.flourish::before { background: linear-gradient(90deg, transparent, var(--gold)); }
+.flourish::after { background: linear-gradient(90deg, var(--gold), transparent); }
+
+/* Kart */
+.card {
+  position: relative; background: var(--vellum); border-radius: 6px; padding: 18px;
+  border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent);
+  display: flex; flex-direction: column; gap: 12px; min-width: 0;
+}
+.card::after { content: ""; position: absolute; inset: 4px; border-radius: 3px; border: .6px solid color-mix(in srgb, var(--gold) 28%, transparent); pointer-events: none; }
+.label { font-family: var(--caps); font-size: 11px; font-weight: 600; letter-spacing: .18em; color: var(--gold); }
+.phase-title { font-family: var(--display); font-size: 28px; color: var(--burgundy-ink); line-height: 1.1; }
+.muted { color: var(--ink-faded); }
+.italic { font-style: italic; }
+.rule { height: 1px; background: color-mix(in srgb, var(--gold) 40%, transparent); }
+p.text { margin: 0; line-height: 1.45; }
+
+.row { display: grid; grid-template-columns: 20px auto 1fr; gap: 10px; align-items: baseline; }
+.row .ic { color: var(--gold); font-size: 13px; text-align: center; }
+.row .k { color: var(--ink-faded); font-size: 16px; }
+.row .v { text-align: right; font-size: 18px; font-variant-numeric: tabular-nums; }
+.row .d { display: block; font-style: italic; font-size: 14px; color: var(--burgundy-ink); }
+
+/* Butonlar */
+.seal {
+  position: relative; width: 100%; padding: 14px 20px; border-radius: 6px;
+  background: var(--burgundy); color: var(--on-burgundy);
+  font-family: var(--display); font-size: 20px;
+  border: 1px solid color-mix(in srgb, var(--gold) 70%, transparent);
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  transition: transform .15s ease, opacity .15s ease;
+}
+.seal::after { content: ""; position: absolute; inset: 3px; border-radius: 4px; border: .6px solid color-mix(in srgb, var(--gold) 38%, transparent); pointer-events: none; }
+.seal:active { transform: scale(.98); opacity: .85; }
+.seal.ghost { background: transparent; color: var(--burgundy-ink); }
+.seal:disabled { opacity: .45; }
+.actions { display: grid; gap: 12px; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { padding: 7px 13px; border-radius: 999px; border: .8px solid color-mix(in srgb, var(--gold) 55%, transparent); font-size: 16px; color: var(--ink); display: inline-flex; gap: 6px; align-items: center; }
+.chip[aria-pressed="true"] { background: var(--burgundy); color: var(--on-burgundy); border-color: color-mix(in srgb, var(--gold) 80%, transparent); }
+.tag { padding: 3px 10px; border-radius: 999px; border: .7px solid color-mix(in srgb, var(--gold) 50%, transparent); font-size: 14px; }
+
+.disclaimer { text-align: center; font-style: italic; color: var(--ink-faded); font-size: 14px; line-height: 1.4; padding: 0 12px; margin: 0; }
+.sample { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 14px; font-style: italic; color: var(--ink-faded); border: 1px dashed color-mix(in srgb, var(--gold) 55%, transparent); border-radius: 6px; padding: 8px 12px; }
+.sample button { font-style: normal; color: var(--burgundy-ink); text-decoration: underline; text-underline-offset: 3px; }
+
+/* Çark */
+.wheel { position: relative; width: 270px; height: 270px; margin: 4px auto; }
+.wheel svg { position: absolute; inset: 0; }
+.wheel .center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+.wheel .center .lbl { font-family: var(--caps); font-size: 10px; letter-spacing: .22em; color: var(--gold); }
+.wheel .center .num { font-family: var(--display); font-size: 76px; line-height: .95; color: var(--burgundy-ink); font-variant-numeric: lining-nums; }
+.wheel .center .unit { font-style: italic; color: var(--ink-faded); font-size: 18px; }
+
+/* Takvim */
+.month-head { display: flex; align-items: center; justify-content: space-between; }
+.month-head .title { font-family: var(--display); font-size: 24px; }
+.nav { width: 38px; height: 38px; border-radius: 50%; color: var(--burgundy-ink); display: grid; place-items: center; font-size: 20px; }
+.weekdays, .grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+.weekdays span { text-align: center; font-family: var(--caps); font-size: 10px; letter-spacing: .08em; color: var(--gold); padding-bottom: 4px; }
+.grid { row-gap: 4px; }
+.day { position: relative; height: 46px; display: grid; place-items: center; font-size: 18px; font-variant-numeric: tabular-nums; }
+.day .m { position: absolute; width: 38px; height: 38px; border-radius: 50%; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+.day .n { position: relative; }
+.day.period .m { background: var(--burgundy); }
+.day.period .n { color: var(--on-burgundy); }
+.day.predicted .m { border: 1.4px dashed var(--burgundy-ink); }
+.day.fertile .m { background: color-mix(in srgb, var(--blush) 45%, transparent); }
+.day.ovulation .m { background: color-mix(in srgb, var(--rose) 26%, transparent); border: 1.5px solid var(--rose); }
+.day.ovulation::after { content: "✦"; position: absolute; top: 1px; right: calc(50% - 22px); font-size: 9px; color: var(--rose); }
+.day.today .n { font-weight: 600; }
+.day.today::before { content: ""; position: absolute; bottom: 8px; left: 50%; width: 14px; height: 2px; margin-left: -7px; border-radius: 2px; background: var(--gold); z-index: 1; }
+.day.period.today::before { background: var(--on-burgundy); }
+.day.selected .m { box-shadow: 0 0 0 3px var(--vellum), 0 0 0 4px color-mix(in srgb, var(--ink) 55%, transparent); }
+.day.selected.none-kind .m { box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 55%, transparent); }
+.day .dot { position: absolute; bottom: 1px; width: 4px; height: 4px; border-radius: 50%; background: var(--gold); }
+.day.future-dim .n { opacity: .3; }
+.legend { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 18px; padding: 0 12px; }
+.legend div { display: flex; gap: 8px; align-items: center; font-size: 15px; color: var(--ink-faded); }
+.legend .m { width: 16px; height: 16px; border-radius: 50%; flex: none; }
+.hint { text-align: center; font-style: italic; color: var(--ink-faded); font-size: 15px; margin: 0; }
+
+/* Kronik */
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; }
+.stats .big { font-family: var(--display); font-size: 38px; color: var(--burgundy-ink); line-height: 1; font-variant-numeric: lining-nums tabular-nums; }
+.stats .u { font-style: italic; color: var(--ink-faded); font-size: 14px; }
+.stats .label { margin-top: 6px; font-size: 9.5px; }
+.cycle { display: grid; gap: 6px; }
+.cycle .top { display: flex; justify-content: space-between; font-size: 16px; }
+.cycle .top b { font-weight: 400; color: var(--burgundy-ink); font-variant-numeric: tabular-nums; }
+.bar { position: relative; height: 10px; }
+.bar .all, .bar .p { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; }
+.bar .all { background: var(--parchment); border: .6px solid color-mix(in srgb, var(--gold) 45%, transparent); }
+.bar .p { background: var(--burgundy); }
+.sym { display: grid; grid-template-columns: 130px 1fr 28px; gap: 10px; align-items: center; font-size: 16px; }
+.sym .track { height: 8px; }
+.sym .fill { height: 8px; border-radius: 4px; background: color-mix(in srgb, var(--burgundy) 78%, transparent); }
+.sym .c { text-align: right; color: var(--ink-faded); font-variant-numeric: tabular-nums; }
+
+/* Ayarlar */
+.set { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 36px; }
+.set .val { color: var(--burgundy-ink); font-variant-numeric: tabular-nums; }
+.stepper { display: inline-flex; border: .8px solid color-mix(in srgb, var(--gold) 55%, transparent); border-radius: 8px; overflow: hidden; }
+.stepper button { width: 38px; height: 32px; font-size: 20px; color: var(--burgundy-ink); }
+.stepper button + button { border-left: .8px solid color-mix(in srgb, var(--gold) 55%, transparent); }
+.toggle { width: 51px; height: 31px; border-radius: 16px; background: color-mix(in srgb, var(--ink-faded) 35%, transparent); position: relative; flex: none; transition: background .2s; }
+.toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,.2); transition: transform .2s; }
+.toggle[aria-checked="true"] { background: var(--burgundy); }
+.toggle[aria-checked="true"]::after { transform: translateX(20px); }
+.foot { font-size: 14px; color: var(--ink-faded); line-height: 1.4; margin: 0; }
+.danger { color: #B3261E; }
+:root[data-theme="dark"] .danger { color: #F2928A; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .danger { color: #F2928A; } }
+.linkbtn { text-align: left; color: var(--burgundy-ink); font-size: 17px; padding: 4px 0; }
+.confirm { display: grid; gap: 10px; border-top: 1px solid color-mix(in srgb, var(--gold) 40%, transparent); padding-top: 12px; }
+.confirm .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.confirm .btns button { padding: 10px; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent); }
+.confirm .btns .yes { background: #B3261E; color: #fff; border-color: transparent; }
+
+/* Sekme çubuğu */
+.tabbar {
+  position: absolute; left: 16px; right: 16px; bottom: 22px; z-index: 20;
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  background: var(--glass); backdrop-filter: blur(18px) saturate(1.3); -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  border-radius: 34px; padding: 7px 6px;
+  border: .8px solid color-mix(in srgb, var(--gold) 45%, transparent);
+  box-shadow: 0 8px 24px rgba(40, 10, 15, .18);
+}
+@media (max-width: 520px) { .tabbar { bottom: calc(12px + env(safe-area-inset-bottom, 0px)); left: max(16px, env(safe-area-inset-left, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); } }
+.tab { display: grid; justify-items: center; gap: 2px; padding: 6px 0 4px; border-radius: 26px; color: var(--ink-faded); font-family: -apple-system, system-ui, sans-serif; font-size: 10.5px; font-weight: 500; }
+.tab svg { width: 24px; height: 24px; }
+.tab[aria-selected="true"] { color: var(--burgundy-ink); background: color-mix(in srgb, var(--burgundy) 10%, transparent); }
+
+/* Gün düzenleyici sayfası */
+.sheet-back { position: absolute; inset: 0; background: rgba(20, 8, 10, .35); z-index: 40; opacity: 0; transition: opacity .25s; }
+.sheet {
+  position: absolute; left: 0; right: 0; bottom: 0; top: 44px; z-index: 41;
+  background: var(--parchment); border-radius: 22px 22px 0 0;
+  transform: translateY(100%); transition: transform .3s cubic-bezier(.2,.8,.2,1);
+  display: flex; flex-direction: column; overflow: hidden;
+  border-top: 1px solid color-mix(in srgb, var(--gold) 45%, transparent);
+}
+.sheet.open { transform: none; }
+.sheet-back.open { opacity: 1; }
+.sheet-bar { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px 6px; font-size: 18px; }
+.sheet-bar button { color: var(--burgundy-ink); }
+.sheet-bar .save { font-weight: 600; }
+.sheet-body { overflow-y: auto; padding: 0 20px 40px; flex: 1; }
+textarea { width: 100%; min-height: 90px; resize: vertical; background: transparent; border: 0; border-bottom: .8px solid color-mix(in srgb, var(--gold) 50%, transparent); color: var(--ink); font-family: var(--body); font-style: italic; font-size: 18px; line-height: 1.4; padding: 4px 0; }
+textarea::placeholder { color: var(--ink-faded); }
+
+/* Başlangıç kartı */
+.field { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+input[type="date"] { font: inherit; color: var(--burgundy-ink); background: var(--parchment); border: .8px solid color-mix(in srgb, var(--gold) 55%, transparent); border-radius: 8px; padding: 6px 10px; min-height: 36px; }
+
+/* PIN kilidi */
+.lock { position: absolute; inset: 0; z-index: 60; display: grid; place-content: center; justify-items: center; gap: 18px; text-align: center; padding: 24px;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(114, 22, 34, .12) 100%), var(--parchment); }
+.lock[hidden] { display: none; }
+.lock .crest { font-family: var(--display); font-size: 64px; color: var(--gold); line-height: 1; }
+.lock h3 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 32px; color: var(--ink); }
+.lock .msg { font-style: italic; color: var(--ink-faded); min-height: 22px; margin: 0; }
+.lock .msg.err { color: var(--burgundy-ink); font-style: normal; }
+.pins { display: flex; gap: 16px; }
+.pins span { width: 14px; height: 14px; border-radius: 50%; border: 1.4px solid var(--burgundy-ink); }
+.pins span.on { background: var(--burgundy-ink); }
+.keypad { display: grid; grid-template-columns: repeat(3, 72px); gap: 14px; }
+.keypad button { width: 72px; height: 72px; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent); font-family: var(--display); font-size: 30px; color: var(--ink); background: var(--vellum); }
+.keypad button:active { background: color-mix(in srgb, var(--burgundy) 18%, var(--vellum)); }
+.keypad .plain { border: 0; background: none; font-size: 17px; color: var(--burgundy-ink); font-family: var(--body); }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="topband" aria-hidden="true"></div>
+
+<aside class="aside">
+  <div class="eyebrow">Ay Defteri</div>
+  <h1>Ay Defteri</h1>
+  <p>Bu sayfa iPhone'da Safari ile açılıp <i>Ana Ekrana Ekle</i> denildiğinde, kendi simgesiyle tam ekran bir uygulama olarak çalışır.</p>
+  <p>Kayıtlar yalnızca açıldığı cihazda tutulur, hiçbir yere gönderilmez.</p>
+</aside>
+
+<div class="phone" id="phone">
+  <div class="island" aria-hidden="true"></div>
+  <div class="statusbar" aria-hidden="true">
+    <span id="clock">9:41</span>
+    <span class="icons">
+      <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+      <svg width="26" height="12" viewBox="0 0 26 12" fill="none"><rect x=".5" y=".5" width="22" height="11" rx="3.5" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="16" height="8" rx="2" fill="currentColor"/><rect x="24" y="4" width="1.6" height="4" rx=".8" fill="currentColor" opacity=".4"/></svg>
+    </span>
+  </div>
+  <main class="screen" id="screen" aria-live="polite"></main>
+  <nav class="tabbar" role="tablist" id="tabbar" aria-label="Sekmeler"></nav>
+  <div class="sheet-back" id="sheetBack" hidden></div>
+  <section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Gün kaydı" hidden></section>
+  <section class="lock" id="lock" role="dialog" aria-modal="true" aria-label="Şifre" hidden></section>
+</div>
+<input type="file" id="importFile" accept="application/json,.json" hidden>
+
+<script>
+(() => {
+  // ---------- Tarih yardımcıları (YYYY-MM-DD anahtarlarıyla çalışır) ----------
+  const MONTHS = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
+  const MONTHS_S = ["Oca","Şub","Mar","Nis","May","Haz","Tem","Ağu","Eyl","Eki","Kas","Ara"];
+  const WEEKDAYS = ["Pazar","Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi"];
+  const WD_SHORT = ["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"];
+  const pad = n => String(n).padStart(2, "0");
+  const keyOf = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const parts = k => k.split("-").map(Number);
+  const utc = k => { const [y, m, d] = parts(k); return Date.UTC(y, m - 1, d); };
+  const fromUtc = t => { const d = new Date(t); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`; };
+  const addDays = (k, n) => fromUtc(utc(k) + n * 864e5);
+  const diff = (a, b) => Math.round((utc(b) - utc(a)) / 864e5);
+  const weekday = k => new Date(utc(k)).getUTCDay();
+  const dayMonth = k => { const [, m, d] = parts(k); return `${d} ${MONTHS[m - 1]}`; };
+  const shortDM = k => { const [, m, d] = parts(k); return `${d} ${MONTHS_S[m - 1]}`; };
+  const longDay = k => `${dayMonth(k)} ${WEEKDAYS[weekday(k)]}`;
+  const upper = s => s.toLocaleUpperCase("tr-TR");
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  let TODAY = keyOf(new Date());
+
+  // ---------- Seçenekler ----------
+  const FLOWS = [{ v: 1, t: "Hafif" }, { v: 2, t: "Orta" }, { v: 3, t: "Yoğun" }];
+  const SYMPTOMS = { cramps: "Kramp", headache: "Baş ağrısı", bloating: "Şişkinlik", breastTenderness: "Göğüs hassasiyeti", acne: "Sivilce", fatigue: "Yorgunluk", backPain: "Bel ağrısı", nausea: "Bulantı", cravings: "İştah artışı", insomnia: "Uykusuzluk", spotting: "Lekelenme", discharge: "Akıntı" };
+  const MOODS = { calm: "Huzurlu", happy: "Neşeli", sensitive: "Hassas", anxious: "Kaygılı", irritable: "Sinirli", sad: "Hüzünlü", exhausted: "Bitkin" };
+  const PHASES = {
+    menstrual: ["Regl Dönemi", "Bedenine nazik davran; dinlen, ısın ve bol su iç."],
+    expected: ["Regl Bekleniyor", "Reglinin bugünlerde başlaması bekleniyor."],
+    follicular: ["Foliküler Evre", "Enerjin yükselişte. Yeni işlere başlamak için güzel bir vakit."],
+    fertile: ["Bereketli Pencere", "Gebelik olasılığının arttığı günlerdesin."],
+    ovulation: ["Ovülasyon Günü", "Yumurtlamanın en olası günü (tahmini)."],
+    luteal: ["Luteal Evre", "Beden yavaşlıyor; regl öncesi belirtiler görülebilir."],
+    late: ["Gecikme", "Tahmin edilen gün geçti. Stres, seyahat ya da başka etkenler döngüyü kaydırabilir."],
+    unknown: ["Defter Boş", "Başlamak için son reglinin ilk gününü işaretle."]
+  };
+  const KIND_TITLE = { period: "Regl günü", predicted: "Tahmini regl", ovulation: "Tahmini ovülasyon", fertile: "Bereketli gün", none: "Sakin gün" };
+
+  // ---------- Durum (yalnızca bu telefonun yerel deposunda) ----------
+  const STORE = "aydefteri-v1";
+  const defaults = { cycle: 28, period: 5, luteal: 14, daysBefore: 2, pinHash: null };
+  let state = { logs: {}, settings: { ...defaults } };
+  let storageOk = true;
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE) || "null");
+    if (saved && saved.logs) state = { logs: saved.logs, settings: { ...defaults, ...saved.settings } };
+  } catch (e) { storageOk = false; }
+  const save = () => {
+    try { localStorage.setItem(STORE, JSON.stringify(state)); storageOk = true; }
+    catch (e) { storageOk = false; }
+  };
+  // Tarayıcıdan, depolama alanı daralsa bile bu kayıtları silmemesini iste.
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
+
+  const ui = { tab: "today", month: TODAY.slice(0, 7), selected: TODAY, editingPeriod: false, confirmDelete: false, startDay: TODAY, startLen: 5, notice: "" };
+
+  // ---------- Döngü motoru (iOS sürümündeki CycleEngine ile aynı mantık) ----------
+  function buildEngine() {
+    const s = state.settings, logs = state.logs, today = TODAY;
+    const periodDays = new Set(Object.keys(logs).filter(k => logs[k].isPeriod));
+    const groups = [];
+    for (const d of [...periodDays].sort()) {
+      const g = groups[groups.length - 1];
+      if (g && diff(g[g.length - 1], d) <= 2) g.push(d); else groups.push([d]);
+    }
+    const cycles = groups.map((g, i) => ({ start: g[0], periodLength: diff(g[0], g[g.length - 1]) + 1, length: i + 1 < groups.length ? diff(g[0], groups[i + 1][0]) : null }));
+    const avg = (a, fb) => a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : fb;
+    const avgCycle = avg(cycles.map(c => c.length).filter(l => l != null && l >= 18 && l <= 50).slice(-6), s.cycle);
+    const avgPeriod = Math.max(1, Math.min(avg(cycles.filter(c => c.length != null).map(c => c.periodLength).filter(l => l >= 1 && l <= 12).slice(-6), s.period), avgCycle - 1));
+    const luteal = Math.min(s.luteal, Math.max(avgCycle - 6, 7));
+    const kinds = {}; const predicted = []; const ovulations = []; let currentOv = null; let late = 0;
+
+    if (cycles.length) {
+      const last = cycles[cycles.length - 1];
+      const rawNext = addDays(last.start, avgCycle);
+      let next = rawNext;
+      const overdue = diff(rawNext, today);
+      if (overdue > 0) {
+        if (overdue < avgCycle) { late = overdue; next = today; }
+        else { while (next < today) next = addDays(next, avgCycle); }
+      }
+      for (let k = 0; k < 12; k++) predicted.push(addDays(next, k * avgCycle));
+      for (let i = 1; i < cycles.length; i++) ovulations.push(addDays(cycles[i].start, -luteal));
+      if (late > 0) {
+        currentOv = addDays(rawNext, -luteal); ovulations.push(currentOv);
+        predicted.slice(1).forEach(p => ovulations.push(addDays(p, -luteal)));
+      } else {
+        currentOv = addDays(predicted[0], -luteal);
+        predicted.forEach(p => ovulations.push(addDays(p, -luteal)));
+      }
+      for (const ov of ovulations) {
+        for (let o = -5; o <= 1; o++) { if (o === 0) continue; const d = addDays(ov, o); if (!kinds[d]) kinds[d] = "fertile"; }
+        kinds[ov] = "ovulation";
+      }
+      for (const p of predicted) for (let o = 0; o < avgPeriod; o++) { const d = addDays(p, o); if (d >= today) kinds[d] = "predicted"; }
+      const lg = groups[groups.length - 1];
+      if (diff(lg[lg.length - 1], today) <= 1) for (let o = 0; o < avgPeriod; o++) { const d = addDays(last.start, o); if (d >= today && !periodDays.has(d)) kinds[d] = "predicted"; }
+    }
+
+    const e = { today, cycles, avgCycle, avgPeriod, luteal, predicted, ovulations, currentOv, late, periodDays };
+    e.hasData = cycles.length > 0;
+    e.kind = k => periodDays.has(k) ? "period" : (kinds[k] || "none");
+    e.lastStart = e.hasData ? cycles[cycles.length - 1].start : null;
+    e.cycleDay = e.lastStart ? diff(e.lastStart, today) + 1 : null;
+    e.isPeriodToday = periodDays.has(today);
+    e.ongoing = periodDays.has(addDays(today, -1)) && !e.isPeriodToday;
+    e.nextOv = ovulations.find(o => o >= today) || null;
+    e.ovIndex = avgCycle - luteal;
+    e.phase = (() => {
+      if (e.isPeriodToday) return "menstrual";
+      if (!e.hasData) return "unknown";
+      if (late > 0) return "late";
+      if (kinds[today] === "predicted") return e.ongoing ? "menstrual" : "expected";
+      if (!currentOv) return "unknown";
+      const d = diff(currentOv, today);
+      if (d === 0) return "ovulation";
+      if (d >= -5 && d <= 1) return "fertile";
+      return d < -5 ? "follicular" : "luteal";
+    })();
+    e.chance = (() => {
+      if (!e.hasData || late > 0) return null;
+      if (e.isPeriodToday) return "Düşük";
+      const d = diff(currentOv, today);
+      if (d >= -2 && d <= 0) return "Yüksek";
+      if ((d >= -5 && d <= -3) || d === 1) return "Orta";
+      return "Düşük";
+    })();
+    return e;
+  }
+
+  // ---------- Kayıt işlemleri ----------
+  const isEmptyLog = l => !l.isPeriod && !l.symptoms.length && !l.mood && !l.note && !l.intimacy;
+  function setPeriod(k, on) {
+    const l = state.logs[k] || { isPeriod: false, flow: 0, symptoms: [], mood: null, note: "", intimacy: false };
+    l.isPeriod = on; l.flow = on ? (l.flow || 2) : 0;
+    if (isEmptyLog(l)) delete state.logs[k]; else state.logs[k] = l;
+    save();
+  }
+
+  // ---------- Parçalar ----------
+  const header = (title, sub) => `
+    <header class="header">
+      ${sub ? `<div class="sub">${esc(sub)}</div>` : ""}
+      <h2 aria-label="${esc(title)}"><span class="initial">${esc(title[0])}</span>${esc(title.slice(1))}</h2>
+      <div class="flourish" aria-hidden="true">❦</div>
+    </header>`;
+  const card = (label, inner) => `<section class="card">${label ? `<div class="label">${esc(upper(label))}</div>` : ""}${inner}</section>`;
+  const row = (ic, k, v, d) => `<div class="row"><span class="ic" aria-hidden="true">${ic}</span><span class="k">${esc(k)}</span><span class="v">${esc(v)}${d ? `<span class="d">${esc(d)}</span>` : ""}</span></div>`;
+  const rel = d => d === 0 ? "Bugün" : d === 1 ? "Yarın" : `${d} gün sonra`;
+
+  function logSummary(l) {
+    const out = [];
+    if (l.isPeriod && l.flow) {
+      const drops = [1, 2, 3].map(i => i <= l.flow ? "●" : "○").join(" ");
+      out.push(`<div><span style="color:var(--burgundy-ink);letter-spacing:.1em">${drops}</span> &nbsp;${FLOWS[l.flow - 1].t} akış</div>`);
+    }
+    if (l.mood) out.push(`<div>Ruh hâli: <span class="italic">${MOODS[l.mood]}</span></div>`);
+    if (l.symptoms.length) out.push(`<div class="chips">${l.symptoms.map(s => `<span class="tag">${SYMPTOMS[s] || esc(s)}</span>`).join("")}</div>`);
+    if (l.intimacy) out.push(`<div>♡ Cinsel ilişki</div>`);
+    if (l.note) out.push(`<p class="text italic">“${esc(l.note)}”</p>`);
+    return out.join("");
+  }
+
+  function wheel(e) {
+    const size = 270, c = size / 2, w = 16, r = c - 10 - w / 2;
+    const total = Math.max(e.avgCycle, 1);
+    const arc = (a, b, color) => {
+      a = Math.max(0, a); b = Math.min(b, total);
+      if (b <= a) return "";
+      return `<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${color}" stroke-width="${w}" pathLength="${total}" stroke-dasharray="${b - a} ${total}" stroke-dashoffset="${-a}" transform="rotate(-90 ${c} ${c})"/>`;
+    };
+    let ticks = "";
+    for (let i = 0; i < total; i++) {
+      const ang = i / total * 2 * Math.PI - Math.PI / 2, major = i % 7 === 0;
+      const r1 = c - 2, r2 = c - (major ? 8 : 5);
+      ticks += `<line x1="${c + r1 * Math.cos(ang)}" y1="${c + r1 * Math.sin(ang)}" x2="${c + r2 * Math.cos(ang)}" y2="${c + r2 * Math.sin(ang)}" stroke="var(--gold)" stroke-opacity="${major ? .8 : .4}" stroke-width="1"/>`;
+    }
+    let marker = "";
+    if (e.hasData && e.cycleDay) {
+      const pos = Math.min(e.cycleDay - 0.5, total - 0.5);
+      const ang = pos / total * 2 * Math.PI - Math.PI / 2;
+      const x = c + r * Math.cos(ang), y = c + r * Math.sin(ang);
+      marker = `<circle cx="${x}" cy="${y}" r="13" fill="var(--parchment)" stroke="var(--burgundy-ink)" stroke-width="2"/><circle cx="${x}" cy="${y}" r="6" fill="var(--burgundy-ink)"/>`;
+    }
+    const ov = e.ovIndex;
+    const center = e.cycleDay
+      ? `<div class="lbl">DÖNGÜNÜN</div><div class="num">${e.cycleDay}</div><div class="unit">günü</div>`
+      : `<div class="num" style="font-size:56px;color:var(--gold)">☾</div><div class="unit">Henüz kayıt yok</div>`;
+    return `
+      <div class="wheel" role="img" aria-label="${e.cycleDay ? `Döngünün ${e.cycleDay}. günü, ${PHASES[e.phase][0]}` : "Henüz döngü kaydı yok"}">
+        <svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" aria-hidden="true">
+          <circle cx="${c}" cy="${c}" r="${c - .5}" fill="none" stroke="var(--gold)" stroke-opacity=".55" stroke-width=".8"/>
+          <circle cx="${c}" cy="${c}" r="${r - w / 2 - 6}" fill="none" stroke="var(--gold)" stroke-opacity=".35" stroke-width=".6"/>
+          ${ticks}
+          <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="var(--vellum)" stroke-width="${w}"/>
+          ${e.hasData ? arc(0, e.avgPeriod, "var(--burgundy)") + arc(ov - 5, ov + 2, "var(--blush)") + arc(ov, ov + 1, "var(--rose)") : ""}
+          ${marker}
+        </svg>
+        <div class="center">${center}</div>
+      </div>`;
+  }
+
+  // ---------- Ekranlar ----------
+  function todayView(e) {
+    const [pt, pd] = PHASES[e.phase];
+    let nextDetail = "";
+    if (e.late > 0) nextDetail = `${e.late} gün gecikti`;
+    else if (e.predicted[0]) { const d = diff(TODAY, e.predicted[0]); nextDetail = d === 0 ? "Bugün bekleniyor" : d === 1 ? "Yarın" : `${d} gün sonra`; }
+    const log = state.logs[TODAY];
+    return `<div class="stack">
+      ${header("Bugün", longDay(TODAY))}
+      ${!storageOk ? `<div class="sample"><span>Kayıtlar bu cihaza yazılamıyor. Gizli sekmedeysen normal Safari ya da ana ekran uygulamasıyla aç.</span></div>` : ""}
+      ${wheel(e)}
+      ${!e.hasData ? card("Başlangıç", `
+        <p class="text">Son reglin hangi gün başladı?</p>
+        <div class="field"><span>İlk gün</span><input type="date" id="startDay" value="${ui.startDay}" max="${TODAY}"></div>
+        <div class="set"><span>Kaç gün sürdü <span class="val">${ui.startLen} gün</span></span><span class="stepper"><button data-action="start-len" data-delta="-1" aria-label="Azalt">−</button><button data-action="start-len" data-delta="1" aria-label="Artır">+</button></span></div>
+        <button class="seal" data-action="start">Deftere İşle</button>
+        <p class="foot">Daha eski regllerini de Takvim sekmesinden işaretlersen tahminler hemen senin döngüne göre hesaplanır.</p>`) : ""}
+      ${card("Evre", `<div class="phase-title">${pt}</div><p class="text">${pd}</p>${e.chance ? `<div class="rule"></div>${row("✧", "Gebelik olasılığı", e.chance)}` : ""}`)}
+      ${e.hasData ? card("Kehanetler", [
+        e.predicted[0] ? row("◆", "Sonraki regl", dayMonth(e.predicted[0]), nextDetail) : "",
+        e.nextOv ? row("☼", "Ovülasyon", dayMonth(e.nextOv), rel(diff(TODAY, e.nextOv))) : "",
+        e.nextOv ? row("❧", "Bereketli pencere", `${shortDM(addDays(e.nextOv, -5))} – ${shortDM(addDays(e.nextOv, 1))}`) : "",
+        row("◌", "Ortalama döngü", `${e.avgCycle} gün`)
+      ].join("")) : ""}
+      <div class="actions">
+        ${e.isPeriodToday
+          ? `<button class="seal ghost" data-action="period-off">Bugün Regl Değilim</button>`
+          : `<button class="seal" data-action="period-on">${e.ongoing ? "Regl Bugün de Sürüyor" : "Reglim Bugün Başladı"}</button>`}
+        <button class="seal ghost" data-action="edit" data-day="${TODAY}">Günlüğe Yaz</button>
+      </div>
+      ${log && (log.isPeriod || !isEmptyLog(log)) ? card("Bugünün Kaydı", logSummary(log)) : ""}
+      <p class="disclaimer">Tahminler bilgilendirme amaçlıdır; tıbbi tavsiye ya da doğum kontrol yöntemi yerine geçmez.</p>
+    </div>`;
+  }
+
+  function calendarView(e) {
+    const [y, m] = ui.month.split("-").map(Number);
+    const first = `${y}-${pad(m)}-01`;
+    const count = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    const offset = (weekday(first) + 6) % 7;
+    let cells = "";
+    for (let i = 0; i < offset; i++) cells += `<div class="day" aria-hidden="true"></div>`;
+    for (let i = 0; i < count; i++) {
+      const k = addDays(first, i), kind = e.kind(k), l = state.logs[k];
+      const cls = ["day", kind === "none" ? "none-kind" : kind];
+      if (k === TODAY) cls.push("today");
+      if (!ui.editingPeriod && k === ui.selected) cls.push("selected");
+      if (ui.editingPeriod && k > TODAY) cls.push("future-dim");
+      const dot = l && (l.symptoms.length || l.mood || l.note || l.intimacy);
+      cells += `<button class="${cls.join(" ")}" data-action="day" data-day="${k}" aria-label="${dayMonth(k)}, ${KIND_TITLE[kind]}${k === TODAY ? ", bugün" : ""}"><span class="m"></span><span class="n">${i + 1}</span>${dot ? `<span class="dot"></span>` : ""}</button>`;
+    }
+    const sel = ui.selected, sk = e.kind(sel), sl = state.logs[sel];
+    const selCard = ui.editingPeriod ? "" : card(longDay(sel), `
+      <div class="phase-title" style="font-size:23px;${sk === "none" ? "color:var(--ink)" : ""}">${KIND_TITLE[sk]}</div>
+      ${sl && (sl.isPeriod || !isEmptyLog(sl)) ? logSummary(sl) : sel <= TODAY ? `<p class="text italic muted">Bu güne ait bir kayıt yok.</p>` : ""}
+      ${sel <= TODAY ? `<button class="seal ghost" data-action="edit" data-day="${sel}">${sl ? "Kaydı Düzenle" : "Kayıt Ekle"}</button>` : ""}`);
+    return `<div class="stack">
+      ${header("Takvim", "Ayın seyri")}
+      <section class="card" id="calCard">
+        <div class="month-head">
+          <button class="nav" data-action="month" data-delta="-1" aria-label="Önceki ay">‹</button>
+          <button class="title" data-action="month-today">${MONTHS[m - 1]} ${y}</button>
+          <button class="nav" data-action="month" data-delta="1" aria-label="Sonraki ay">›</button>
+        </div>
+        <div class="weekdays">${WD_SHORT.map(d => `<span>${upper(d)}</span>`).join("")}</div>
+        <div class="grid">${cells}</div>
+      </section>
+      <div class="actions">
+        <button class="seal ${ui.editingPeriod ? "" : "ghost"}" data-action="toggle-edit">${ui.editingPeriod ? "Tamam" : "Regl Günlerini Düzenle"}</button>
+        ${ui.editingPeriod ? `<p class="hint">Regl gördüğün günlere dokunarak işaretle ya da işareti kaldır.</p>` : ""}
+      </div>
+      <div class="legend">
+        <div><span class="m" style="background:var(--burgundy)"></span>Regl</div>
+        <div><span class="m" style="border:1.4px dashed var(--burgundy-ink)"></span>Tahmini regl</div>
+        <div><span class="m" style="background:color-mix(in srgb, var(--blush) 45%, transparent)"></span>Bereketli</div>
+        <div><span class="m" style="background:color-mix(in srgb, var(--rose) 26%, transparent);border:1.5px solid var(--rose)"></span>Ovülasyon</div>
+      </div>
+      ${selCard}
+    </div>`;
+  }
+
+  function chronicleView(e) {
+    if (!e.hasData) return `<div class="stack">${header("Kronik", "Döngülerin kaydı")}${card("", `<p class="text italic muted">Defterin henüz boş. Takvimden geçmiş regl günlerini işaretlediğinde döngülerin burada belirecek.</p>`)}</div>`;
+    const done = e.cycles.filter(c => c.length != null);
+    const lens = done.map(c => c.length);
+    const short = lens.length ? Math.min(...lens) : null, long = lens.length ? Math.max(...lens) : null;
+    const regular = done.length >= 3 ? long - short <= 7 : null;
+    const list = e.cycles.slice().reverse().slice(0, 12);
+    const maxLen = Math.max(...list.map(c => c.length || 0), e.avgCycle, e.cycleDay || 0, 1);
+    const bars = list.map(c => {
+      const len = c.length ?? e.cycleDay ?? c.periodLength;
+      const title = c.length != null ? `${shortDM(c.start)} – ${shortDM(addDays(c.start, c.length - 1))}` : `${shortDM(c.start)} – sürüyor`;
+      return `<div class="cycle"><div class="top"><span>${title}</span><b>${c.length != null ? `${len} gün` : `${len}. gün`}</b></div>
+        <div class="bar"><span class="all" style="width:${len / maxLen * 100}%"></span><span class="p" style="width:${Math.min(c.periodLength, len) / maxLen * 100}%"></span></div></div>`;
+    }).join("");
+    const counts = {};
+    Object.values(state.logs).forEach(l => l.symptoms.forEach(s => counts[s] = (counts[s] || 0) + 1));
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1] || SYMPTOMS[a[0]].localeCompare(SYMPTOMS[b[0]], "tr")).slice(0, 6);
+    const topMax = top.length ? top[0][1] : 1;
+    return `<div class="stack">
+      ${header("Kronik", "Döngülerin kaydı")}
+      ${card("Özet", `
+        <div class="stats">
+          <div><div class="big">${e.avgCycle}</div><div class="u">gün</div><div class="label">ORT. DÖNGÜ</div></div>
+          <div><div class="big">${e.avgPeriod}</div><div class="u">gün</div><div class="label">ORT. REGL</div></div>
+          <div><div class="big">${done.length}</div><div class="u">adet</div><div class="label">DÖNGÜ</div></div>
+        </div>
+        ${short != null ? `<div class="rule"></div>${row("↔", "En kısa – en uzun", `${short} – ${long} gün`)}` : ""}
+        ${regular != null ? row(regular ? "✓" : "!", "Düzen", regular ? "Düzenli" : "Değişken", regular ? "" : "Döngüler arasında 7 günden fazla fark var") : ""}
+        ${done.length < 3 ? `<p class="foot italic">Tahminler, en az üç döngü kaydedildiğinde daha isabetli olur.</p>` : ""}`)}
+      ${card("Döngüler", `<div class="stack" style="gap:16px">${bars}</div>`)}
+      ${top.length ? card("Sık Görülen Belirtiler", top.map(([s, n]) => `<div class="sym"><span>${SYMPTOMS[s]}</span><div class="track"><div class="fill" style="width:${Math.max(6, n / topMax * 100)}%"></div></div><span class="c">${n}</span></div>`).join("")) : ""}
+    </div>`;
+  }
+
+  function settingsView() {
+    const s = state.settings;
+    const stepper = (label, key, min, max, unit) => `<div class="set"><span>${label} <span class="val">${s[key]} ${unit}</span></span><span class="stepper"><button data-action="step" data-key="${key}" data-delta="-1" data-min="${min}" data-max="${max}" aria-label="${label} azalt">−</button><button data-action="step" data-key="${key}" data-delta="1" data-min="${min}" data-max="${max}" aria-label="${label} artır">+</button></span></div>`;
+    const toggle = (label, key) => `<div class="set"><span>${label}</span><button class="toggle" role="switch" aria-checked="${!!s[key]}" aria-label="${label}" data-action="toggle" data-key="${key}"></button></div>`;
+    const n = Object.keys(state.logs).length;
+    return `<div class="stack">
+      ${header("Ayarlar", "Defterin düzeni")}
+      ${card("Döngü", `${stepper("Döngü uzunluğu", "cycle", 20, 45, "gün")}${stepper("Regl süresi", "period", 2, 10, "gün")}${stepper("Luteal evre", "luteal", 10, 16, "gün")}
+        <p class="foot">Yeterli kayıt biriktiğinde tahminler senin geçmişinden hesaplanır; bu değerler yalnızca başlangıç içindir. Luteal evre, ovülasyon ile sonraki regl arasındaki süredir.</p>`)}
+      ${card("Hatırlatıcılar", `${stepper("Regl uyarısı", "daysBefore", 1, 7, "gün önce")}
+        <button class="seal ghost" data-action="export-ics" ${buildEngine().hasData ? "" : "disabled"}>Takvime Aktar</button>
+        <p class="foot">Önümüzdeki 12 tahmini regli ve bereketli pencereyi uyarılarıyla birlikte iPhone Takvimi'ne ekler. Etkinlik adları yalnızca “☾ Ay Defteri” der. Takvimin iCloud ile eşitleniyorsa etkinlikler de eşitlenir; istemiyorsan eklerken <i>iPhone'umda</i> takvimini seç. Tahminler değişince eski etkinlikleri silip yeniden aktar.</p>`)}
+      ${card("Gizlilik", `<div class="set"><span>Şifreyle kilitle</span><button class="toggle" role="switch" aria-checked="${!!s.pinHash}" aria-label="Şifreyle kilitle" data-action="toggle-pin"></button></div>
+        <p class="foot">Tüm kayıtlar yalnızca bu telefonda saklanır. Hiçbir sunucuya gönderilmez, reklam ya da analiz aracı yoktur. Uygulama ilk açılıştan sonra internetsiz de çalışır.</p>`)}
+      ${card("Yedek", `
+        <button class="linkbtn" data-action="export-json">Yedeği Dosyaya Kaydet</button>
+        <button class="linkbtn" data-action="import-json">Yedekten Geri Yükle</button>
+        <button class="linkbtn danger" data-action="ask-delete">Tüm verileri sil</button>
+        ${ui.confirmDelete ? `<div class="confirm"><p class="text">Tüm kayıtlar silinsin mi? Bu işlem geri alınamaz.</p><div class="btns"><button data-action="cancel-delete">Vazgeç</button><button class="yes" data-action="delete-all">Hepsini Sil</button></div></div>` : ""}
+        ${ui.notice ? `<p class="foot italic" style="color:var(--burgundy-ink)">${esc(ui.notice)}</p>` : ""}
+        <p class="foot">${n} günlük kayıt. Uygulamayı ana ekrandan silersen kayıtlar da silinir; ayda bir yedeği <i>Dosyalar</i>'a kaydetmen iyi olur.</p>`)}
+      ${card("Hakkında", `<p class="text italic muted">Ay Defteri, tahminleri geçmiş döngülerinin ortalamasından hesaplar. Sonuçlar bilgilendirme amaçlıdır; tıbbi tavsiye, teşhis ya da doğum kontrol yöntemi yerine geçmez.</p>`)}
+    </div>`;
+  }
+
+  // ---------- Gün düzenleyici ----------
+  let draft = null;
+  const sheet = document.getElementById("sheet"), back = document.getElementById("sheetBack");
+  function openEditor(k) {
+    const l = state.logs[k];
+    draft = { k, isPeriod: !!(l && l.isPeriod), flow: (l && l.flow) || 2, symptoms: l ? [...l.symptoms] : [], mood: l ? l.mood : null, note: l ? l.note : "", intimacy: !!(l && l.intimacy) };
+    renderSheet();
+    sheet.hidden = false; back.hidden = false;
+    requestAnimationFrame(() => { sheet.classList.add("open"); back.classList.add("open"); });
+  }
+  function closeEditor() {
+    sheet.classList.remove("open"); back.classList.remove("open");
+    setTimeout(() => { sheet.hidden = true; back.hidden = true; }, 300);
+  }
+  function renderSheet() {
+    const d = draft, future = d.k > TODAY;
+    const chip = (act, val, label, on) => `<button class="chip" data-action="${act}" data-val="${val}" aria-pressed="${on}">${label}</button>`;
+    sheet.innerHTML = `
+      <div class="sheet-bar"><button data-action="sheet-cancel">Vazgeç</button><button class="save" data-action="sheet-save">Kaydet</button></div>
+      <div class="sheet-body"><div class="stack">
+        ${header(dayMonth(d.k), WEEKDAYS[weekday(d.k)])}
+        ${card("Regl", `<div class="set"><span>Bugün regl günü</span><button class="toggle" role="switch" aria-checked="${d.isPeriod}" aria-label="Regl günü" data-action="d-period" ${future ? "disabled" : ""}></button></div>
+          ${d.isPeriod ? `<div class="chips">${FLOWS.map(f => chip("d-flow", f.v, f.t, d.flow === f.v)).join("")}</div>` : ""}`)}
+        ${card("Belirtiler", `<div class="chips">${Object.entries(SYMPTOMS).map(([k, t]) => chip("d-sym", k, t, d.symptoms.includes(k))).join("")}</div>`)}
+        ${card("Ruh Hâli", `<div class="chips">${Object.entries(MOODS).map(([k, t]) => chip("d-mood", k, t, d.mood === k)).join("")}</div>`)}
+        ${card("Diğer", `<div class="set"><span>Cinsel ilişki</span><button class="toggle" role="switch" aria-checked="${d.intimacy}" aria-label="Cinsel ilişki" data-action="d-int"></button></div>`)}
+        ${card("Not", `<textarea id="note" placeholder="Bu güne dair birkaç satır…">${esc(d.note)}</textarea>`)}
+      </div></div>`;
+  }
+  sheet.addEventListener("input", ev => { if (ev.target.id === "note") draft.note = ev.target.value; });
+  sheet.addEventListener("click", ev => {
+    const b = ev.target.closest("[data-action]"); if (!b) return;
+    const a = b.dataset.action, v = b.dataset.val;
+    const body = sheet.querySelector(".sheet-body"), top = body ? body.scrollTop : 0;
+    if (a === "sheet-cancel") return closeEditor();
+    if (a === "sheet-save") {
+      const note = draft.note.trim();
+      const l = { isPeriod: draft.isPeriod && draft.k <= TODAY, flow: 0, symptoms: Object.keys(SYMPTOMS).filter(s => draft.symptoms.includes(s)), mood: draft.mood, note, intimacy: draft.intimacy };
+      l.flow = l.isPeriod ? draft.flow : 0;
+      if (isEmptyLog(l)) delete state.logs[draft.k]; else state.logs[draft.k] = l;
+      save(); render(); closeEditor(); return;
+    }
+    if (a === "d-period") draft.isPeriod = !draft.isPeriod;
+    if (a === "d-flow") draft.flow = Number(v);
+    if (a === "d-sym") draft.symptoms = draft.symptoms.includes(v) ? draft.symptoms.filter(s => s !== v) : [...draft.symptoms, v];
+    if (a === "d-mood") draft.mood = draft.mood === v ? null : v;
+    if (a === "d-int") draft.intimacy = !draft.intimacy;
+    renderSheet();
+    const nb = sheet.querySelector(".sheet-body"); if (nb) nb.scrollTop = top;
+  });
+  back.addEventListener("click", closeEditor);
+
+  // ---------- Çizim ----------
+  const screen = document.getElementById("screen"), tabbar = document.getElementById("tabbar");
+  const ICONS = {
+    today: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M14.5 3.2A8.8 8.8 0 1 0 20.8 15 7.2 7.2 0 0 1 14.5 3.2Z"/><path d="M18.5 3l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6Z"/></svg>`,
+    calendar: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4" stroke-linecap="round"/><circle cx="8.5" cy="14" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="14" r="1.2" fill="currentColor" stroke="none"/><circle cx="15.5" cy="14" r="1.2" fill="currentColor" stroke="none"/></svg>`,
+    chronicle: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H19v16H7.5a1.5 1.5 0 0 0 0 3H19v1H7.5A3.5 3.5 0 0 1 4 18.5v-14Z"/><path d="M9 6h7M9 9h5" stroke="var(--glass)" stroke-width="1.4" stroke-linecap="round"/></svg>`,
+    settings: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7" stroke-linecap="round"/></svg>`
+  };
+  const TABS = [["today", "Bugün"], ["calendar", "Takvim"], ["chronicle", "Kronik"], ["settings", "Ayarlar"]];
+
+  function render(keepScroll) {
+    const top = screen.scrollTop;
+    const e = buildEngine();
+    screen.innerHTML = ui.tab === "today" ? todayView(e) : ui.tab === "calendar" ? calendarView(e) : ui.tab === "chronicle" ? chronicleView(e) : settingsView();
+    tabbar.innerHTML = TABS.map(([id, t]) => `<button class="tab" role="tab" aria-selected="${ui.tab === id}" data-tab="${id}">${ICONS[id]}<span>${t}</span></button>`).join("");
+    screen.scrollTop = keepScroll ? top : 0;
+  }
+
+  tabbar.addEventListener("click", ev => {
+    const b = ev.target.closest("[data-tab]"); if (!b) return;
+    ui.tab = b.dataset.tab; ui.confirmDelete = false; render(false);
+  });
+
+  screen.addEventListener("click", ev => {
+    const b = ev.target.closest("[data-action]"); if (!b) return;
+    const a = b.dataset.action, e = buildEngine();
+    switch (a) {
+      case "period-on": setPeriod(TODAY, true); break;
+      case "period-off": setPeriod(TODAY, false); break;
+      case "edit": return openEditor(b.dataset.day);
+      case "start-len": ui.startLen = Math.min(10, Math.max(1, ui.startLen + Number(b.dataset.delta))); break;
+      case "start": {
+        const input = document.getElementById("startDay");
+        const k = input && /^\d{4}-\d{2}-\d{2}$/.test(input.value) ? input.value : TODAY;
+        if (k > TODAY) break;
+        for (let i = 0; i < ui.startLen; i++) { const d = addDays(k, i); if (d <= TODAY) setPeriod(d, true); }
+        state.settings.period = ui.startLen; save();
+        break;
+      }
+      case "export-ics": exportCalendar(e); return;
+      case "export-json": exportBackup(); return;
+      case "import-json": document.getElementById("importFile").click(); return;
+      case "toggle-pin":
+        if (state.settings.pinHash) { state.settings.pinHash = null; save(); }
+        else return showLock("set");
+        break;
+      case "day": {
+        const k = b.dataset.day;
+        if (ui.editingPeriod) { if (k <= TODAY) setPeriod(k, !e.periodDays.has(k)); }
+        else ui.selected = k;
+        break;
+      }
+      case "month": {
+        let [y, m] = ui.month.split("-").map(Number);
+        m += Number(b.dataset.delta); if (m < 1) { m = 12; y--; } if (m > 12) { m = 1; y++; }
+        ui.month = `${y}-${pad(m)}`; break;
+      }
+      case "month-today": ui.month = TODAY.slice(0, 7); ui.selected = TODAY; break;
+      case "toggle-edit": ui.editingPeriod = !ui.editingPeriod; break;
+      case "step": {
+        const k = b.dataset.key, v = state.settings[k] + Number(b.dataset.delta);
+        state.settings[k] = Math.min(Number(b.dataset.max), Math.max(Number(b.dataset.min), v)); save(); break;
+      }
+      case "toggle": state.settings[b.dataset.key] = !state.settings[b.dataset.key]; save(); break;
+      case "ask-delete": ui.confirmDelete = true; break;
+      case "cancel-delete": ui.confirmDelete = false; break;
+      case "delete-all": state.logs = {}; ui.confirmDelete = false; save(); break;
+    }
+    render(true);
+  });
+  screen.addEventListener("change", ev => { if (ev.target.id === "startDay") ui.startDay = ev.target.value || TODAY; });
+
+  // ---------- Dosyalar: yedek ve takvim ----------
+  async function deliver(name, text, type) {
+    const blob = new Blob([text], { type });
+    try {
+      const file = new File([blob], name, { type });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); return; }
+    } catch (err) { if (err && err.name === "AbortError") return; }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  }
+
+  function exportBackup() {
+    const data = { app: "Ay Defteri", version: 1, exportedAt: new Date().toISOString(), settings: { ...state.settings, pinHash: null }, logs: state.logs };
+    deliver(`ay-defteri-yedek-${TODAY}.json`, JSON.stringify(data, null, 2), "application/json");
+  }
+
+  document.getElementById("importFile").addEventListener("change", async ev => {
+    const file = ev.target.files && ev.target.files[0];
+    ev.target.value = "";
+    if (!file) return;
+    try {
+      const data = JSON.parse(await file.text());
+      if (!data || typeof data.logs !== "object") throw new Error("biçim");
+      const logs = {};
+      for (const [k, l] of Object.entries(data.logs)) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(k) || !l) continue;
+        logs[k] = { isPeriod: !!l.isPeriod, flow: Number(l.flow) || 0, symptoms: Array.isArray(l.symptoms) ? l.symptoms.filter(s => SYMPTOMS[s]) : [], mood: MOODS[l.mood] ? l.mood : null, note: String(l.note || ""), intimacy: !!l.intimacy };
+      }
+      const count = Object.keys(logs).length;
+      if (!confirm(`${count} günlük kayıt geri yüklensin mi? Şu anki kayıtların yerini alır.`)) return;
+      const pin = state.settings.pinHash;
+      state = { logs, settings: { ...defaults, ...(data.settings || {}), pinHash: pin } };
+      save(); ui.notice = `${count} günlük kayıt geri yüklendi.`;
+    } catch (err) {
+      ui.notice = "Bu dosya bir Ay Defteri yedeği gibi görünmüyor.";
+    }
+    render(true);
+  });
+
+  function exportCalendar(e) {
+    const ymd = k => k.replace(/-/g, "");
+    const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
+    const before = state.settings.daysBefore;
+    // Tüm gün etkinlikleri gece yarısı başlar; uyarılar sabah 09.00'a denk gelir.
+    const alarm = days => `BEGIN:VALARM\r\nACTION:DISPLAY\r\nDESCRIPTION:Ay Defteri\r\nTRIGGER:${days > 0 ? `-P${days - 1}DT15H` : "PT9H"}\r\nEND:VALARM\r\n`;
+    const event = (id, start, endExclusive, title, desc, alarms) =>
+      `BEGIN:VEVENT\r\nUID:${id}@aydefteri.local\r\nDTSTAMP:${stamp}\r\nDTSTART;VALUE=DATE:${ymd(start)}\r\nDTEND;VALUE=DATE:${ymd(endExclusive)}\r\nSUMMARY:${title}\r\nDESCRIPTION:${desc}\r\nTRANSP:TRANSPARENT\r\n${alarms}END:VEVENT\r\n`;
+    let body = "";
+    e.predicted.filter(p => p >= TODAY).forEach(p => {
+      body += event(`regl-${ymd(p)}`, p, addDays(p, e.avgPeriod), "☾ Ay Defteri", "Tahmini regl başlangıcı", alarm(before));
+    });
+    e.ovulations.filter(o => addDays(o, 1) >= TODAY).forEach(o => {
+      body += event(`bereket-${ymd(o)}`, addDays(o, -5), addDays(o, 2), "✦ Ay Defteri", `Bereketli pencere · tahmini ovülasyon ${dayMonth(o)}`, alarm(0));
+    });
+    const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Ay Defteri//TR\r\nCALSCALE:GREGORIAN\r\nX-WR-CALNAME:Ay Defteri\r\n${body}END:VCALENDAR\r\n`;
+    const blob = new Blob([ics], { type: "text/calendar" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "ay-defteri.ics"; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  }
+
+  // ---------- Şifre kilidi ----------
+  const lock = document.getElementById("lock");
+  let lockMode = null, entry = "", firstPin = "", lockMsg = "", lockErr = false;
+  const hashPin = async pin => {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("ay-defteri:" + pin));
+    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+  };
+  function showLock(mode) {
+    lockMode = mode; entry = ""; firstPin = ""; lockErr = false;
+    lockMsg = mode === "set" ? "Yeni bir 4 haneli şifre seç" : "Defterini açmak için şifreni gir";
+    lock.hidden = false; renderLock();
+  }
+  function renderLock() {
+    const keys = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<button data-k="${n}">${n}</button>`).join("");
+    lock.innerHTML = `
+      <div class="crest" aria-hidden="true">☾</div>
+      <h3>Ay Defteri</h3>
+      <p class="msg ${lockErr ? "err" : ""}">${lockMsg}</p>
+      <div class="pins" aria-label="${entry.length} hane girildi">${[0, 1, 2, 3].map(i => `<span class="${i < entry.length ? "on" : ""}"></span>`).join("")}</div>
+      <div class="keypad">${keys}
+        <button class="plain" data-k="${lockMode === "set" ? "cancel" : "forgot"}">${lockMode === "set" ? "Vazgeç" : "Unuttum"}</button>
+        <button data-k="0">0</button>
+        <button class="plain" data-k="del" aria-label="Sil">⌫</button>
+      </div>`;
+  }
+  lock.addEventListener("click", async ev => {
+    const b = ev.target.closest("[data-k]"); if (!b) return;
+    const k = b.dataset.k;
+    if (k === "cancel") { lock.hidden = true; return; }
+    if (k === "forgot") {
+      if (confirm("Şifre sıfırlanamaz. Kilidi kaldırmak için bu telefondaki tüm kayıtlar silinecek. Devam edilsin mi?")) {
+        state = { logs: {}, settings: { ...defaults } }; save(); lock.hidden = true; render(false);
+      }
+      return;
+    }
+    if (k === "del") { entry = entry.slice(0, -1); renderLock(); return; }
+    if (entry.length >= 4) return;
+    entry += k; lockErr = false; renderLock();
+    if (entry.length < 4) return;
+    if (lockMode === "unlock") {
+      if (await hashPin(entry) === state.settings.pinHash) { lock.hidden = true; entry = ""; }
+      else { entry = ""; lockErr = true; lockMsg = "Şifre yanlış"; renderLock(); }
+    } else if (!firstPin) {
+      firstPin = entry; entry = ""; lockMsg = "Şifreyi bir kez daha gir"; renderLock();
+    } else if (entry === firstPin) {
+      state.settings.pinHash = await hashPin(entry); save(); lock.hidden = true; render(true);
+    } else {
+      firstPin = ""; entry = ""; lockErr = true; lockMsg = "Şifreler uyuşmadı, baştan seç"; renderLock();
+    }
+  });
+
+  // Uygulama arka plana gidip döndüğünde: gün değiştiyse yenile, şifre varsa kilitle.
+  let hiddenAt = 0;
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) { hiddenAt = Date.now(); return; }
+    const now = keyOf(new Date());
+    if (now !== TODAY) { TODAY = now; ui.selected = now; ui.month = now.slice(0, 7); render(false); }
+    if (state.settings.pinHash && lock.hidden && Date.now() - hiddenAt > 30000) showLock("unlock");
+  });
+  if (state.settings.pinHash) showLock("unlock");
+
+  if ("serviceWorker" in navigator && location.protocol !== "file:") {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
+
+  // Takvimde yatay kaydırma ile ay değiştirme
+  let touchX = null, touchY = null;
+  screen.addEventListener("touchstart", ev => { if (ui.tab !== "calendar" || !ev.target.closest("#calCard")) return; touchX = ev.touches[0].clientX; touchY = ev.touches[0].clientY; }, { passive: true });
+  screen.addEventListener("touchend", ev => {
+    if (touchX == null) return;
+    const dx = ev.changedTouches[0].clientX - touchX, dy = ev.changedTouches[0].clientY - touchY;
+    touchX = null;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      let [y, m] = ui.month.split("-").map(Number);
+      m += dx < 0 ? 1 : -1; if (m < 1) { m = 12; y--; } if (m > 12) { m = 1; y++; }
+      ui.month = `${y}-${pad(m)}`; render(true);
+    }
+  }, { passive: true });
+
+  const clock = document.getElementById("clock");
+  const tick = () => { const d = new Date(); clock.textContent = `${d.getHours()}:${pad(d.getMinutes())}`; };
+  tick(); setInterval(tick, 30000);
+
+  render(false);
+})();
+</script>
+</body>
+</html>
