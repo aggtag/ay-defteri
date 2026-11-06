@@ -1,7 +1,7 @@
 {
-  "name": "Ay Defteri",
-  "short_name": "Ay Defteri",
-  "description": "Kayıtları yalnızca telefonunda tutan regl ve ovülasyon defteri.",
+  "name": "Dolunay",
+  "short_name": "Dolunay",
+  "description": "Kayıtları yalnızca telefonunda tutan regl ve ovülasyon takvimi.",
   "lang": "tr",
   "start_url": "./",
   "scope": "./",

@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>Ay Defteri</title>
+<title>Dolunay</title>
 <meta name="description" content="Kayıtları yalnızca telefonunda tutan regl ve ovülasyon defteri.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Ay Defteri">
+<meta name="apple-mobile-web-app-title" content="Dolunay">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="format-detection" content="telephone=no">
 <meta name="theme-color" content="#721622">
@@ -297,8 +297,8 @@ input[type="date"] { font: inherit; color: var(--burgundy-ink); background: var(
 <div class="topband" aria-hidden="true"></div>
 
 <aside class="aside">
-  <div class="eyebrow">Ay Defteri</div>
-  <h1>Ay Defteri</h1>
+  <div class="eyebrow">Dolunay</div>
+  <h1>Dolunay</h1>
   <p>Bu sayfa iPhone'da Safari ile açılıp <i>Ana Ekrana Ekle</i> denildiğinde, kendi simgesiyle tam ekran bir uygulama olarak çalışır.</p>
   <p>Kayıtlar yalnızca açıldığı cihazda tutulur, hiçbir yere gönderilmez.</p>
 </aside>
@@ -648,7 +648,7 @@ input[type="date"] { font: inherit; color: var(--burgundy-ink); background: var(
         <p class="foot">Yeterli kayıt biriktiğinde tahminler senin geçmişinden hesaplanır; bu değerler yalnızca başlangıç içindir. Luteal evre, ovülasyon ile sonraki regl arasındaki süredir.</p>`)}
       ${card("Hatırlatıcılar", `${stepper("Regl uyarısı", "daysBefore", 1, 7, "gün önce")}
         <button class="seal ghost" data-action="export-ics" ${buildEngine().hasData ? "" : "disabled"}>Takvime Aktar</button>
-        <p class="foot">Önümüzdeki 12 tahmini regli ve bereketli pencereyi uyarılarıyla birlikte iPhone Takvimi'ne ekler. Etkinlik adları yalnızca “☾ Ay Defteri” der. Takvimin iCloud ile eşitleniyorsa etkinlikler de eşitlenir; istemiyorsan eklerken <i>iPhone'umda</i> takvimini seç. Tahminler değişince eski etkinlikleri silip yeniden aktar.</p>`)}
+        <p class="foot">Önümüzdeki 12 tahmini regli ve bereketli pencereyi uyarılarıyla birlikte iPhone Takvimi'ne ekler. Etkinlik adları yalnızca “☾ Dolunay” der. Takvimin iCloud ile eşitleniyorsa etkinlikler de eşitlenir; istemiyorsan eklerken <i>iPhone'umda</i> takvimini seç. Tahminler değişince eski etkinlikleri silip yeniden aktar.</p>`)}
       ${card("Gizlilik", `<div class="set"><span>Şifreyle kilitle</span><button class="toggle" role="switch" aria-checked="${!!s.pinHash}" aria-label="Şifreyle kilitle" data-action="toggle-pin"></button></div>
         <p class="foot">Tüm kayıtlar yalnızca bu telefonda saklanır. Hiçbir sunucuya gönderilmez, reklam ya da analiz aracı yoktur. Uygulama ilk açılıştan sonra internetsiz de çalışır.</p>`)}
       ${card("Yedek", `
@@ -658,7 +658,7 @@ input[type="date"] { font: inherit; color: var(--burgundy-ink); background: var(
         ${ui.confirmDelete ? `<div class="confirm"><p class="text">Tüm kayıtlar silinsin mi? Bu işlem geri alınamaz.</p><div class="btns"><button data-action="cancel-delete">Vazgeç</button><button class="yes" data-action="delete-all">Hepsini Sil</button></div></div>` : ""}
         ${ui.notice ? `<p class="foot italic" style="color:var(--burgundy-ink)">${esc(ui.notice)}</p>` : ""}
         <p class="foot">${n} günlük kayıt. Uygulamayı ana ekrandan silersen kayıtlar da silinir; ayda bir yedeği <i>Dosyalar</i>'a kaydetmen iyi olur.</p>`)}
-      ${card("Hakkında", `<p class="text italic muted">Ay Defteri, tahminleri geçmiş döngülerinin ortalamasından hesaplar. Sonuçlar bilgilendirme amaçlıdır; tıbbi tavsiye, teşhis ya da doğum kontrol yöntemi yerine geçmez.</p>`)}
+      ${card("Hakkında", `<p class="text italic muted">Dolunay, tahminleri geçmiş döngülerinin ortalamasından hesaplar. Sonuçlar bilgilendirme amaçlıdır; tıbbi tavsiye, teşhis ya da doğum kontrol yöntemi yerine geçmez.</p>`)}
     </div>`;
   }
 
@@ -800,8 +800,8 @@ input[type="date"] { font: inherit; color: var(--burgundy-ink); background: var(
   }
 
   function exportBackup() {
-    const data = { app: "Ay Defteri", version: 1, exportedAt: new Date().toISOString(), settings: { ...state.settings, pinHash: null }, logs: state.logs };
-    deliver(`ay-defteri-yedek-${TODAY}.json`, JSON.stringify(data, null, 2), "application/json");
+    const data = { app: "Dolunay", version: 1, exportedAt: new Date().toISOString(), settings: { ...state.settings, pinHash: null }, logs: state.logs };
+    deliver(`dolunay-yedek-${TODAY}.json`, JSON.stringify(data, null, 2), "application/json");
   }
 
   document.getElementById("importFile").addEventListener("change", async ev => {
@@ -822,7 +822,7 @@ input[type="date"] { font: inherit; color: var(--burgundy-ink); background: var(
       state = { logs, settings: { ...defaults, ...(data.settings || {}), pinHash: pin } };
       save(); ui.notice = `${count} günlük kayıt geri yüklendi.`;
     } catch (err) {
-      ui.notice = "Bu dosya bir Ay Defteri yedeği gibi görünmüyor.";
+      ui.notice = "Bu dosya bir Dolunay yedeği gibi görünmüyor.";
     }
     render(true);
   });
@@ -832,21 +832,21 @@ input[type="date"] { font: inherit; color: var(--burgundy-ink); background: var(
     const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
     const before = state.settings.daysBefore;
     // Tüm gün etkinlikleri gece yarısı başlar; uyarılar sabah 09.00'a denk gelir.
-    const alarm = days => `BEGIN:VALARM\r\nACTION:DISPLAY\r\nDESCRIPTION:Ay Defteri\r\nTRIGGER:${days > 0 ? `-P${days - 1}DT15H` : "PT9H"}\r\nEND:VALARM\r\n`;
+    const alarm = days => `BEGIN:VALARM\r\nACTION:DISPLAY\r\nDESCRIPTION:Dolunay\r\nTRIGGER:${days > 0 ? `-P${days - 1}DT15H` : "PT9H"}\r\nEND:VALARM\r\n`;
     const event = (id, start, endExclusive, title, desc, alarms) =>
-      `BEGIN:VEVENT\r\nUID:${id}@aydefteri.local\r\nDTSTAMP:${stamp}\r\nDTSTART;VALUE=DATE:${ymd(start)}\r\nDTEND;VALUE=DATE:${ymd(endExclusive)}\r\nSUMMARY:${title}\r\nDESCRIPTION:${desc}\r\nTRANSP:TRANSPARENT\r\n${alarms}END:VEVENT\r\n`;
+      `BEGIN:VEVENT\r\nUID:${id}@dolunay.local\r\nDTSTAMP:${stamp}\r\nDTSTART;VALUE=DATE:${ymd(start)}\r\nDTEND;VALUE=DATE:${ymd(endExclusive)}\r\nSUMMARY:${title}\r\nDESCRIPTION:${desc}\r\nTRANSP:TRANSPARENT\r\n${alarms}END:VEVENT\r\n`;
     let body = "";
     e.predicted.filter(p => p >= TODAY).forEach(p => {
-      body += event(`regl-${ymd(p)}`, p, addDays(p, e.avgPeriod), "☾ Ay Defteri", "Tahmini regl başlangıcı", alarm(before));
+      body += event(`regl-${ymd(p)}`, p, addDays(p, e.avgPeriod), "☾ Dolunay", "Tahmini regl başlangıcı", alarm(before));
     });
     e.ovulations.filter(o => addDays(o, 1) >= TODAY).forEach(o => {
-      body += event(`bereket-${ymd(o)}`, addDays(o, -5), addDays(o, 2), "✦ Ay Defteri", `Bereketli pencere · tahmini ovülasyon ${dayMonth(o)}`, alarm(0));
+      body += event(`bereket-${ymd(o)}`, addDays(o, -5), addDays(o, 2), "✦ Dolunay", `Bereketli pencere · tahmini ovülasyon ${dayMonth(o)}`, alarm(0));
     });
-    const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Ay Defteri//TR\r\nCALSCALE:GREGORIAN\r\nX-WR-CALNAME:Ay Defteri\r\n${body}END:VCALENDAR\r\n`;
+    const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Dolunay//TR\r\nCALSCALE:GREGORIAN\r\nX-WR-CALNAME:Dolunay\r\n${body}END:VCALENDAR\r\n`;
     const blob = new Blob([ics], { type: "text/calendar" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = "ay-defteri.ics"; document.body.appendChild(a); a.click(); a.remove();
+    a.href = url; a.download = "dolunay.ics"; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 10000);
   }
 
@@ -866,7 +866,7 @@ input[type="date"] { font: inherit; color: var(--burgundy-ink); background: var(
     const keys = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<button data-k="${n}">${n}</button>`).join("");
     lock.innerHTML = `
       <div class="crest" aria-hidden="true">☾</div>
-      <h3>Ay Defteri</h3>
+      <h3>Dolunay</h3>
       <p class="msg ${lockErr ? "err" : ""}">${lockMsg}</p>
       <div class="pins" aria-label="${entry.length} hane girildi">${[0, 1, 2, 3].map(i => `<span class="${i < entry.length ? "on" : ""}"></span>`).join("")}</div>
       <div class="keypad">${keys}

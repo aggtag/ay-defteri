@@ -1,6 +1,6 @@
 // Uygulama dosyalarını telefona kaydeder; ilk açılıştan sonra internet olmadan çalışır.
 // Kayıtların kendisi burada değil, telefonun yerel deposundadır ve hiçbir yere gönderilmez.
-const CACHE = "aydefteri-v1";
+const CACHE = "dolunay-v1";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./apple-touch-icon.png", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", event => {
